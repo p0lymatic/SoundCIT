@@ -1,0 +1,18 @@
+{
+  "pan_hit": {
+    "sounds": ["scexample:pan_hit"],
+    "subtitle": "scexample.subtitle.pan_hit"
+  },
+  "pan_swing": {
+    "sounds": ["scexample:pan_swing"],
+    "subtitle": "scexample.subtitle.pan_swing"
+  },
+  "thunder": {
+    "sounds": ["scexample:thunder"],
+    "subtitle": "scexample.subtitle.thunder"
+  },
+  "chime": {
+    "sounds": ["scexample:chime"],
+    "subtitle": "scexample.subtitle.chime"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "_comment": "Прямая замена по id ванильного звука — точнее семантических триггеров.",
+  "item": "minecraft:trident",
+  "pattern": "regex:^(Mjolnir|Мьёльнир)$",
+  "sounds": {
+    "minecraft:item.trident.thunder": "scexample:thunder",
+    "minecraft:item.trident.return": "scexample:chime",
+    "trident_hit_ground": "scexample:pan_hit",
+    "riptide": "scexample:pan_swing"
+  }
+}
