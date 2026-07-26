@@ -73,6 +73,16 @@ public final class AutoTest {
                 if (--delay > 0) {
                     return;
                 }
+                // -Dsoundcit.autotest.server=host:port joins a real server instead of a local world.
+                // This is how the Paper plugin gets tested: nothing else can prove that a hint sent
+                // by a plugin is decoded by the mod's codec.
+                String remote = System.getProperty("soundcit.autotest.server");
+                if (remote != null && !remote.isBlank()) {
+                    SoundCIT.LOGGER.info("[SoundCIT AutoTest] connecting to {}", remote);
+                    stage = Stage.WAIT_WORLD;
+                    connectToServer(mc, remote);
+                    return;
+                }
                 if (mc.getLevelSource().levelExists(LEVEL_NAME)) {
                     SoundCIT.LOGGER.info("[SoundCIT AutoTest] reusing existing world {}", LEVEL_NAME);
                     stage = Stage.WAIT_WORLD;
@@ -85,9 +95,11 @@ public final class AutoTest {
             }
             case CREATE_WORLD -> {}
             case WAIT_WORLD -> {
-                if (mc.player != null && mc.level != null && mc.getSingleplayerServer() != null) {
+                boolean remoteMode = System.getProperty("soundcit.autotest.server") != null;
+                if (mc.player != null && mc.level != null
+                        && (remoteMode || mc.getSingleplayerServer() != null)) {
                     SoundCIT.LOGGER.info("[SoundCIT AutoTest] world loaded");
-                    scenarios = buildScenarios();
+                    scenarios = remoteMode ? buildRemoteScenarios() : buildScenarios();
                     delay = 60; // let chunks settle and the attack cooldown fill
                     stage = Stage.SETUP_SCENARIO;
                 }
@@ -102,11 +114,13 @@ public final class AutoTest {
                     SoundCIT.LOGGER.info("[SoundCIT AutoTest] scenario: {}", scenario.name());
                     SoundReplacementHandler.resetJournal();
                     MinecraftServer server = mc.getSingleplayerServer();
-                    server.execute(() -> {
-                        ServerPlayer player = server.getPlayerList().getPlayers().get(0);
-                        clearLeftovers(player);
-                        scenario.setup().accept(player);
-                    });
+                    if (server != null) {
+                        server.execute(() -> {
+                            ServerPlayer player = server.getPlayerList().getPlayers().get(0);
+                            clearLeftovers(player);
+                            scenario.setup().accept(player);
+                        });
+                    }
                     delay = 30;
                     waited = 0;
                     stage = Stage.ACT;
@@ -173,11 +187,39 @@ public final class AutoTest {
 
     /** Runs a scenario's server-side action on the server thread, if it has one. */
     private static void runServerAct(Minecraft mc, Scenario scenario) {
-        if (scenario.serverAct() == null) {
+        if (scenario.serverAct() == null || mc.getSingleplayerServer() == null) {
             return;
         }
         MinecraftServer server = mc.getSingleplayerServer();
         server.execute(() -> scenario.serverAct().accept(server.getPlayerList().getPlayers().get(0)));
+    }
+
+    /**
+     * On a real server the test cannot set anything up server-side, so it works through commands and
+     * checks the one thing that matters here: whether a hint sent by the Paper plugin was decoded by
+     * the mod's codec at all. That flag is only set when a payload arrives and parses.
+     */
+    private List<Scenario> buildRemoteScenarios() {
+        List<Scenario> list = new ArrayList<>();
+        list.add(new Scenario("server plugin hint is received and decoded",
+                player -> {},
+                mc -> {
+                    mc.player.connection.sendCommand(
+                            "give @s minecraft:mace[minecraft:custom_name='\"Frying Pan\"'] 1");
+                },
+                40,
+                () -> {
+                    Minecraft mc = Minecraft.getInstance();
+                    // Right-click with the named item; the plugin reports it on PlayerInteractEvent.
+                    mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
+                    return true;
+                }));
+        list.add(new Scenario("plugin channel round-trip",
+                player -> {},
+                mc -> mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND),
+                60,
+                com.soundcit.client.resolve.ServerHintStore::isServerAssisted));
+        return list;
     }
 
     private List<Scenario> buildScenarios() {
@@ -247,6 +289,14 @@ public final class AutoTest {
                 () -> SoundReplacementHandler.wasAnyReplacementOf("minecraft:item.totem.use")));
 
         return list;
+    }
+
+    /** Joins a real server, which is the only way to test the server half against a real client. */
+    private static void connectToServer(Minecraft mc, String address) {
+        var parsed = net.minecraft.client.multiplayer.resolver.ServerAddress.parseString(address);
+        var data = new net.minecraft.client.multiplayer.ServerData("SoundCIT test", address,
+                net.minecraft.client.multiplayer.ServerData.Type.OTHER);
+        net.minecraft.client.gui.screens.ConnectScreen.startConnecting(null, mc, parsed, data, false, null);
     }
 
     /**
