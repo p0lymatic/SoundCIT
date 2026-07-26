@@ -141,7 +141,9 @@ public final class TriggerSounds {
 
         // --- misc items ---
         exact(TriggerType.SPYGLASS, "item.spyglass.use", "item.spyglass.stop_using");
-        family(TriggerType.INSTRUMENT, "item.goat_horn.play", "");
+        // Instruments became data-driven: the ids moved from item.goat_horn.play* to
+        // item.goat_horn.sound.N, declared in data/minecraft/instrument/*.json.
+        family(TriggerType.INSTRUMENT, "item.goat_horn.", "");
         exact(TriggerType.BUNDLE, "item.bundle.insert", "item.bundle.remove_one", "item.bundle.drop_contents");
 
         // --- workstations ---

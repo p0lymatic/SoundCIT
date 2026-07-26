@@ -7,7 +7,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -39,16 +38,17 @@ public abstract class ClientLevelMixin {
         SoundOriginStack.pop();
     }
 
-    @Inject(method = "playSeededSound(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/core/Holder;Lnet/minecraft/sounds/SoundSource;FFJ)V",
+    // Since the 2026 releases the first parameter is Entity, not Player.
+    @Inject(method = "playSeededSound(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/core/Holder;Lnet/minecraft/sounds/SoundSource;FFJ)V",
             at = @At("HEAD"))
-    private void soundcit$captureSeededEntity(Player player, Entity entity, Holder<SoundEvent> sound,
+    private void soundcit$captureSeededEntity(Entity source, Entity entity, Holder<SoundEvent> sound,
             SoundSource category, float volume, float pitch, long seed, CallbackInfo ci) {
         SoundOriginStack.push(SoundOrigin.atEntity(entity, volume, pitch, seed));
     }
 
-    @Inject(method = "playSeededSound(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/core/Holder;Lnet/minecraft/sounds/SoundSource;FFJ)V",
+    @Inject(method = "playSeededSound(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/entity/Entity;Lnet/minecraft/core/Holder;Lnet/minecraft/sounds/SoundSource;FFJ)V",
             at = @At("RETURN"))
-    private void soundcit$releaseSeededEntity(Player player, Entity entity, Holder<SoundEvent> sound,
+    private void soundcit$releaseSeededEntity(Entity source, Entity entity, Holder<SoundEvent> sound,
             SoundSource category, float volume, float pitch, long seed, CallbackInfo ci) {
         SoundOriginStack.pop();
     }

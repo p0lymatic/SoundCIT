@@ -3,11 +3,15 @@ package com.soundcit.client;
 import com.soundcit.context.SoundContextTracker;
 import com.soundcit.trigger.TriggerType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.Projectile;
+import com.soundcit.client.resolve.ProjectileTracker;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEntityUseItemEvent;
 import net.neoforged.neoforge.event.entity.player.ArrowLooseEvent;
 import net.neoforged.neoforge.event.entity.player.ArrowNockEvent;
@@ -108,6 +112,31 @@ public final class ActionHooks {
         SoundContextTracker.push(TriggerType.CROSSBOW_LOAD, event.getItem(), event.getEntity());
         SoundContextTracker.push(TriggerType.CROSSBOW_LOAD_END, event.getItem(), event.getEntity());
         SoundContextTracker.push(TriggerType.SHIELD_BLOCK, event.getItem(), event.getEntity());
+    }
+
+    /**
+     * Ties a freshly spawned projectile to the item it came from.
+     *
+     * <p>An arrow or trident carries nothing about its item to the client, so this association has
+     * to be made while the shooter still holds it. Looked up by the shooter's own contexts, which
+     * the shoot/throw hooks recorded a moment earlier.</p>
+     */
+    @SubscribeEvent
+    public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (!event.getLevel().isClientSide || !(event.getEntity() instanceof Projectile projectile)) {
+            return;
+        }
+        Entity owner = projectile.getOwner();
+        if (owner == null) {
+            return;
+        }
+        for (TriggerType trigger : new TriggerType[] {TriggerType.SHOOT, TriggerType.THROW}) {
+            SoundContextTracker.Context context = SoundContextTracker.get(owner.getId(), trigger);
+            if (context != null) {
+                ProjectileTracker.remember(projectile, context.itemId(), context.customName());
+                return;
+            }
+        }
     }
 
     /** A tool or armour piece breaking: the stack is gone from the hand once the sound plays. */

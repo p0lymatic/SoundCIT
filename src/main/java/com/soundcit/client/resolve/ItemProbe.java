@@ -6,8 +6,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.projectile.AbstractArrow;
-import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
+import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
@@ -68,13 +69,19 @@ public final class ItemProbe {
             return named(thrown.getItem(), null, ResolvedItem.LAYER_ENTITY);
         }
         if (entity instanceof AbstractArrow arrow) {
-            // pickupItemStack is server-only, but AbstractArrow copies the item's CUSTOM_NAME onto
-            // the entity on creation, and entity custom names are synced.
+            // Nothing about the arrow's item reaches the client: pickupItemStack is server-only, and
+            // unlike 1.21.x the entity no longer inherits the item's custom name. The only remaining
+            // client-side route is what ProjectileTracker remembered when the shot was predicted.
+            ResolvedItem remembered = ProjectileTracker.get(arrow.getId());
+            if (remembered != null) {
+                return remembered;
+            }
+            // A custom name may still be set explicitly (by a datapack or /summon).
             if (arrow.getCustomName() == null) {
                 return null;
             }
             ResourceLocation itemId = RuleManager.idOf(
-                    arrow instanceof net.minecraft.world.entity.projectile.ThrownTrident ? Items.TRIDENT : Items.ARROW);
+                    arrow instanceof ThrownTrident ? Items.TRIDENT : Items.ARROW);
             return new ResolvedItem(itemId, arrow.getCustomName().getString(), null, ResolvedItem.LAYER_ENTITY);
         }
         return null;

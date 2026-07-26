@@ -2,7 +2,7 @@ package com.soundcit.mixin;
 
 import com.soundcit.context.SoundOrigin;
 import com.soundcit.context.SoundOriginStack;
-import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LevelEventHandler;
 import net.minecraft.core.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,11 +15,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * sound. There is no item anywhere near the playback site, so the event type and block position are
  * captured here as the only thing a server hint can be matched against.
  *
- * <p>This class is heavily transformed by rendering mods, so its mixin is optional — if it fails to
- * apply the mod loses only this category of sounds instead of crashing.</p>
+ * <p>Lived in {@code LevelRenderer} before the 2026 releases. Kept optional ({@code require = 0})
+ * because rendering mods transform this area heavily — if it fails to apply the mod loses only this
+ * category of sounds instead of crashing.</p>
  */
-@Mixin(LevelRenderer.class)
-public abstract class LevelRendererMixin {
+@Mixin(LevelEventHandler.class)
+public abstract class LevelEventHandlerMixin {
 
     @Inject(method = "levelEvent", at = @At("HEAD"), require = 0)
     private void soundcit$captureLevelEvent(int type, BlockPos pos, int data, CallbackInfo ci) {
