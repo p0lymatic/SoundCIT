@@ -21,6 +21,11 @@ public final class NameMatcher {
         this.pattern = pattern;
     }
 
+    /** Accepts any name — for rules whose selectivity comes from conditions instead. */
+    public static NameMatcher matchAny() {
+        return new NameMatcher("<any>", java.util.regex.Pattern.compile(".*", java.util.regex.Pattern.DOTALL));
+    }
+
     public static NameMatcher parse(String spec) {
         if (spec.startsWith("regex:")) {
             return new NameMatcher(spec, Pattern.compile(spec.substring("regex:".length())));

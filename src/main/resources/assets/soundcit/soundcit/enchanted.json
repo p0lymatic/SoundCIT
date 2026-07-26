@@ -1,0 +1,12 @@
+{
+  "_comment": "Проверяет условия: правило срабатывает только на мече с Острота >= 3. Триггеры attack и hit, потому что меч бьёт размашистой атакой.",
+  "item": "minecraft:diamond_sword",
+  "pattern": "Sharp Blade",
+  "enchantments": {
+    "minecraft:sharpness": ">=3"
+  },
+  "sounds": {
+    "hit": "soundcit:frying_pan_hit",
+    "attack": "soundcit:frying_pan_swing"
+  }
+}

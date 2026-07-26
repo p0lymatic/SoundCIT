@@ -130,10 +130,32 @@ public final class ItemProbe {
         if (name == null) {
             return null;
         }
-        return new ResolvedItem(RuleManager.idOf(stack.getItem()), name, trigger, layer);
+        return new ResolvedItem(RuleManager.idOf(stack.getItem()), name, trigger, layer, stack);
     }
 
     private static ResolvedItem withTrigger(ResolvedItem item, @Nullable TriggerType trigger) {
-        return item.trigger() == trigger ? item : new ResolvedItem(item.itemId(), item.customName(), trigger, item.layer());
+        return item.trigger() == trigger ? item
+                : new ResolvedItem(item.itemId(), item.customName(), trigger, item.layer(), item.stack());
+    }
+
+    /**
+     * Looks for the actual stack on an entity, so a candidate that arrived as an id and a name
+     * (from a server hint or a predicted context) can still be judged against conditions.
+     */
+    @Nullable
+    public static ItemStack findStack(Entity entity, Identifier itemId, String customName) {
+        if (!(entity instanceof LivingEntity living)) {
+            return null;
+        }
+        for (ItemStack stack : handsThenArmour(living)) {
+            if (stack.isEmpty()) {
+                continue;
+            }
+            String name = RuleManager.customNameOf(stack);
+            if (name != null && name.equals(customName) && RuleManager.idOf(stack.getItem()).equals(itemId)) {
+                return stack;
+            }
+        }
+        return null;
     }
 }

@@ -1,6 +1,7 @@
 package com.soundcit.client.resolve;
 
 import com.soundcit.config.RuleManager;
+import com.soundcit.config.SoundCITConfig;
 import com.soundcit.context.SoundContextTracker;
 import com.soundcit.context.SoundOrigin;
 import com.soundcit.context.TriggerSounds;
@@ -11,6 +12,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class ItemResolver {
     /** Client entity positions lag behind the server, so this is deliberately loose. */
-    private static final double PROXIMITY_RADIUS = 2.5;
+
 
     private ItemResolver() {}
 
@@ -44,14 +46,15 @@ public final class ItemResolver {
         List<ResolvedItem> candidates = new ArrayList<>(3);
         List<TriggerType> triggers = TriggerSounds.triggersFor(soundId);
 
-        if (origin != null) {
+        SoundCITConfig config = SoundCITConfig.get();
+        if (config.useServerHints && origin != null) {
             long key = origin.hintKey();
             if (key != 0L) {
                 addIfPresent(candidates, ServerHintStore.take(key));
             }
         }
 
-        Entity entity = origin != null ? origin.entity() : null;
+        Entity entity = config.useEntityResolution && origin != null ? origin.entity() : null;
         if (entity != null) {
             addIfPresent(candidates, probeWithTriggers(entity, triggers, soundId));
             addIfPresent(candidates, fromContext(entity.getId(), triggers, soundId));
@@ -61,7 +64,7 @@ public final class ItemResolver {
         double y = origin != null ? origin.y() : sound.getY();
         double z = origin != null ? origin.z() : sound.getZ();
 
-        for (TriggerType trigger : triggers) {
+        for (TriggerType trigger : config.usePredictedContexts ? triggers : List.<TriggerType>of()) {
             SoundContextTracker.Context context = SoundContextTracker.findNear(trigger, x, y, z);
             if (context != null) {
                 candidates.add(new ResolvedItem(context.itemId(), context.customName(), trigger,
@@ -70,7 +73,32 @@ public final class ItemResolver {
             }
         }
 
-        addIfPresent(candidates, byProximity(triggers, soundId, x, y, z));
+        if (config.useProximityGuessing) {
+            addIfPresent(candidates, byProximity(triggers, soundId, x, y, z));
+        }
+        return attachStacks(candidates, entity);
+    }
+
+    /**
+     * Server hints and predicted contexts carry only an item id and a name, which is not enough to
+     * judge a rule's conditions. Where the item is still on an entity we can see, attach it.
+     */
+    private static List<ResolvedItem> attachStacks(List<ResolvedItem> candidates, @Nullable Entity origin) {
+        Minecraft minecraft = Minecraft.getInstance();
+        for (int i = 0; i < candidates.size(); i++) {
+            ResolvedItem candidate = candidates.get(i);
+            if (candidate.stack() != null) {
+                continue;
+            }
+            ItemStack found = null;
+            if (origin != null) {
+                found = ItemProbe.findStack(origin, candidate.itemId(), candidate.customName());
+            }
+            if (found == null && minecraft.player != null) {
+                found = ItemProbe.findStack(minecraft.player, candidate.itemId(), candidate.customName());
+            }
+            candidates.set(i, candidate.withStack(found));
+        }
         return candidates;
     }
 
@@ -114,8 +142,8 @@ public final class ItemResolver {
         if (minecraft.level == null) {
             return null;
         }
-        AABB box = new AABB(x - PROXIMITY_RADIUS, y - PROXIMITY_RADIUS, z - PROXIMITY_RADIUS,
-                x + PROXIMITY_RADIUS, y + PROXIMITY_RADIUS, z + PROXIMITY_RADIUS);
+        double radius = SoundCITConfig.get().proximityRadius;
+        AABB box = new AABB(x - radius, y - radius, z - radius, x + radius, y + radius, z + radius);
         ResolvedItem found = null;
         // Not just living entities: projectiles play their own sounds positionally (a trident
         // sticking into the ground goes through Entity#playSound, which carries no entity), and

@@ -6,10 +6,12 @@ import com.google.gson.JsonSyntaxException;
 import com.soundcit.trigger.TriggerType;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.GsonHelper;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -44,16 +46,19 @@ public final class SoundRule {
     public final Map<Identifier, Identifier> directOverrides;
     /** Higher wins when several rules match the same item; ties break on source path. */
     public final int priority;
+    /** Extra requirements on the item itself; empty for a plain name rule. */
+    public final List<ItemCondition> conditions;
 
     private SoundRule(Identifier source, Set<Identifier> items, NameMatcher nameMatcher,
             Map<TriggerType, Identifier> triggerSounds, Map<Identifier, Identifier> directOverrides,
-            int priority) {
+            int priority, List<ItemCondition> conditions) {
         this.source = source;
         this.items = items;
         this.nameMatcher = nameMatcher;
         this.triggerSounds = triggerSounds;
         this.directOverrides = directOverrides;
         this.priority = priority;
+        this.conditions = conditions;
     }
 
     /** @throws JsonSyntaxException if the file is malformed */
@@ -75,7 +80,15 @@ public final class SoundRule {
             throw new JsonSyntaxException("Unsupported match type '" + match + "', only 'custom_name' is supported");
         }
 
-        NameMatcher matcher = NameMatcher.parse(GsonHelper.getAsString(json, "pattern"));
+        List<ItemCondition> conditions = ItemCondition.parseAll(json);
+        // A rule with conditions may legitimately have no name requirement at all.
+        NameMatcher matcher = json.has("pattern")
+                ? NameMatcher.parse(GsonHelper.getAsString(json, "pattern"))
+                : NameMatcher.matchAny();
+        if (!json.has("pattern") && conditions.isEmpty() && items.isEmpty()) {
+            throw new JsonSyntaxException("Rule matches everything: give it a \"pattern\","
+                    + " an \"item\", or a condition such as \"enchantments\"");
+        }
 
         Map<TriggerType, Identifier> triggerSounds = new HashMap<>();
         Map<Identifier, Identifier> directOverrides = new HashMap<>();
@@ -99,11 +112,36 @@ public final class SoundRule {
         }
 
         return new SoundRule(source, items, matcher, triggerSounds, directOverrides,
-                GsonHelper.getAsInt(json, "priority", 0));
+                GsonHelper.getAsInt(json, "priority", 0), conditions);
     }
 
     public boolean appliesTo(Identifier itemId, String customName) {
         return (items.isEmpty() || items.contains(itemId)) && nameMatcher.matches(customName);
+    }
+
+    /**
+     * Whether this rule accepts the item, conditions included.
+     *
+     * <p>Some sounds are resolved from an item id and a name alone — a projectile in flight carries
+     * nothing else — and a rule with conditions cannot be judged from that. Rather than guess, such
+     * a rule simply declines: a wrong sound is worse than a missing one.</p>
+     */
+    public boolean appliesTo(Identifier itemId, String customName, @Nullable ItemStack stack) {
+        if (!appliesTo(itemId, customName)) {
+            return false;
+        }
+        if (conditions.isEmpty()) {
+            return true;
+        }
+        if (stack == null) {
+            return false;
+        }
+        for (ItemCondition condition : conditions) {
+            if (!condition.test(stack)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Nullable
