@@ -59,7 +59,12 @@ neoForge {
         testClient {
             client()
             systemProperty 'soundcit.autotest', 'true'
-            systemProperty 'soundcit.debug', 'true'
+            systemProperty "soundcit.debug", "true"
+            // ./gradlew runTestClient -PsoundcitServer=host:port joins that server instead of
+            // creating a local world, which is how the Paper plugin gets tested end to end.
+            if (project.hasProperty('soundcitServer')) {
+                systemProperty 'soundcit.autotest.server', project.property('soundcitServer')
+            }
         }
 
         server {
