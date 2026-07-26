@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  * silently falls back to client-side resolution.</p>
  */
 public final class SoundCitNetwork {
-    private static final String VERSION = "1";
+    private static final String VERSION = "2";
 
     private SoundCitNetwork() {}
 
@@ -83,8 +83,8 @@ public final class SoundCitNetwork {
 
     private static void broadcast(ServerLevel level, double x, double y, double z, double rangeSqr,
             long key, ServerCauseTracker.Cause cause) {
-        SoundCausePayload payload = new SoundCausePayload(
-                key, cause.trigger().name(), cause.itemId(), cause.customName());
+        SoundCausePayload payload = new SoundCausePayload(SoundCausePayload.KIND_KEYED,
+                key, cause.trigger().name(), cause.itemId(), cause.customName().getString());
         for (ServerPlayer player : level.players()) {
             if (player.distanceToSqr(x, y, z) > rangeSqr) {
                 continue;

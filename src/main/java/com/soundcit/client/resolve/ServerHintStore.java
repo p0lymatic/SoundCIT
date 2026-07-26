@@ -35,7 +35,17 @@ public final class ServerHintStore {
     public static void accept(SoundCausePayload payload) {
         serverAssisted = true;
         TriggerType trigger = TriggerType.byName(payload.trigger());
-        ResolvedItem item = new ResolvedItem(payload.itemId(), payload.customName().getString(),
+        if (trigger == null) {
+            return; // a newer server knows a trigger this client does not; ignore rather than guess
+        }
+        if (payload.kind() == SoundCausePayload.KIND_CONTEXT) {
+            // Not about one sound but about an entity's next action of this type — exactly what the
+            // client records for its own predictions, so it goes in the same place.
+            SoundContextTracker.pushRemote(trigger, payload.itemId(), payload.customName(),
+                    (int) payload.key());
+            return;
+        }
+        ResolvedItem item = new ResolvedItem(payload.itemId(), payload.customName(),
                 trigger, ResolvedItem.LAYER_SERVER);
         BY_SEED.put(payload.key(), new Hint(item, SoundContextTracker.currentTick() + TTL_TICKS));
     }

@@ -71,6 +71,22 @@ public final class SoundContextTracker {
         }
     }
 
+    /**
+     * Records a context the server told us about. Unlike {@link #push}, there is no stack to
+     * inspect and no rule pre-filter — the server already decided this item was worth mentioning.
+     */
+    public static void pushRemote(TriggerType trigger, Identifier itemId, String customName, int entityId) {
+        Entity entity = net.minecraft.client.Minecraft.getInstance().level != null
+                ? net.minecraft.client.Minecraft.getInstance().level.getEntity(entityId)
+                : null;
+        Vec3 pos = entity != null ? entity.position() : Vec3.ZERO;
+        BY_ENTITY.computeIfAbsent(entityId, id -> new EnumMap<>(TriggerType.class))
+                .put(trigger, new Context(itemId, customName, pos, currentTick + TTL_TICKS));
+        if (SoundCIT.debug()) {
+            SoundCIT.LOGGER.info("[SoundCIT] server context {} for {} on entity {}", trigger, customName, entityId);
+        }
+    }
+
     /** Context recorded for a specific entity, or null if none is active for this trigger. */
     @Nullable
     public static Context get(int entityId, TriggerType trigger) {
