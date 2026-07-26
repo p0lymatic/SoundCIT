@@ -86,13 +86,17 @@ public final class SoundCITPlugin extends JavaPlugin {
     }
 
     /**
-     * Writes the payload exactly as the mod's codec reads it: a var-long key, a kind byte, then
-     * three length-prefixed UTF-8 strings.
+     * Writes the payload exactly as the mod's codec reads it, in this order: kind byte, var-long
+     * key, then three length-prefixed UTF-8 strings (trigger, item id, custom name).
+     *
+     * <p>The order matters and is easy to get wrong — a mismatch here does not fail loudly, it just
+     * produces garbage on the other side — so it is kept next to the codec definition in
+     * {@code SoundCausePayload} and must be changed together with it.</p>
      */
     private static byte[] encode(byte kind, long key, String trigger, String itemId, String customName) {
         ByteArrayOutputStream out = new ByteArrayOutputStream(64);
-        writeVarLong(out, key);
         out.write(kind);
+        writeVarLong(out, key);
         writeString(out, trigger);
         writeString(out, itemId);
         writeString(out, customName);
