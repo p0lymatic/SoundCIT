@@ -1,0 +1,16 @@
+{
+  "_comment": "Маска в имени и несколько предметов массивом: любой меч, в имени которого есть 'гром'.",
+  "item": [
+    "minecraft:wooden_sword",
+    "minecraft:stone_sword",
+    "minecraft:iron_sword",
+    "minecraft:golden_sword",
+    "minecraft:diamond_sword",
+    "minecraft:netherite_sword"
+  ],
+  "pattern": "ipattern:*гром*",
+  "sounds": {
+    "hit": "scexample:thunder",
+    "attack": "scexample:pan_swing"
+  }
+}

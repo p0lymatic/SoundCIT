@@ -1,0 +1,10 @@
+{
+  "_comment": "Правило-подложка: срабатывает только там, где не сработало ничего конкретнее. Отрицательный priority уводит его в конец очереди.",
+  "pattern": "ipattern:*звенящ*",
+  "priority": -10,
+  "sounds": {
+    "hit": "scexample:chime",
+    "use": "scexample:chime",
+    "equip": "scexample:chime"
+  }
+}

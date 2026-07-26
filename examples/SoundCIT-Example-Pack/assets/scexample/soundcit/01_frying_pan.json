@@ -1,0 +1,11 @@
+{
+  "_comment": "Простейший случай: точное имя + семантические триггеры.",
+  "item": "minecraft:mace",
+  "match": "custom_name",
+  "pattern": "Frying Pan",
+  "sounds": {
+    "hit": "scexample:pan_hit",
+    "attack": "scexample:pan_swing",
+    "item_break": "scexample:pan_hit"
+  }
+}
