@@ -29,6 +29,10 @@ import org.jetbrains.annotations.Nullable;
  * }</pre>
  */
 public final class SoundRule {
+    /** Written as {@code "none"} in a rule: play nothing at all instead of the vanilla sound. */
+    public static final Identifier SILENCE =
+            Identifier.fromNamespaceAndPath("soundcit", "silence");
+
     /** Source file, for logging. */
     public final Identifier source;
     /** Item ids this rule applies to; empty = any item. */
@@ -77,7 +81,8 @@ public final class SoundRule {
         Map<Identifier, Identifier> directOverrides = new HashMap<>();
         JsonObject sounds = GsonHelper.getAsJsonObject(json, "sounds");
         for (Map.Entry<String, JsonElement> entry : sounds.entrySet()) {
-            Identifier replacement = Identifier.parse(GsonHelper.convertToString(entry.getValue(), entry.getKey()));
+            String value = GsonHelper.convertToString(entry.getValue(), entry.getKey());
+            Identifier replacement = "none".equalsIgnoreCase(value) ? SILENCE : Identifier.parse(value);
             if (entry.getKey().contains(":")) {
                 directOverrides.put(Identifier.parse(entry.getKey()), replacement);
             } else {

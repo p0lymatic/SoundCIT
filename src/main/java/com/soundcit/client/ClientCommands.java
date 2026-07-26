@@ -40,6 +40,10 @@ public final class ClientCommands {
                     }
                     return Command.SINGLE_SUCCESS;
                 }))
+                .then(Commands.literal("inspect").executes(ctx -> {
+                    InspectCommand.run(line -> ctx.getSource().sendSuccess(() -> line, false));
+                    return Command.SINGLE_SUCCESS;
+                }))
                 .then(Commands.literal("why").executes(ctx -> {
                     var journal = SoundReplacementHandler.journal();
                     if (journal.isEmpty()) {

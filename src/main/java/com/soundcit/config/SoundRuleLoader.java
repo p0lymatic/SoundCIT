@@ -39,6 +39,7 @@ public class SoundRuleLoader extends SimpleJsonResourceReloadListener<JsonElemen
                 SoundCIT.LOGGER.error("SoundCIT: failed to parse rule {}: {}", entry.getKey(), e.getMessage());
             }
         }
+        RuleManager.setProblems(problems);
         // The incoming map iterates in hash order, so without an explicit sort two rules matching
         // the same item would win non-deterministically between runs.
         rules.sort(Comparator.comparingInt((SoundRule r) -> -r.priority)

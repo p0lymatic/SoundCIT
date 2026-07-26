@@ -20,6 +20,7 @@ public class SoundCITClient {
         NeoForge.EVENT_BUS.register(SoundReplacementHandler.class);
         NeoForge.EVENT_BUS.register(ActionHooks.class);
         NeoForge.EVENT_BUS.register(ClientCommands.class);
+        NeoForge.EVENT_BUS.register(ReloadReporter.class);
         if (Boolean.getBoolean("soundcit.autotest") || "true".equals(System.getenv("SOUNDCIT_AUTOTEST"))) {
             NeoForge.EVENT_BUS.register(new AutoTest());
         }

@@ -20,12 +20,15 @@ public final class RuleManager {
     private static volatile RuleIndex index = RuleIndex.EMPTY;
     /** Rule files that failed to parse on the last reload, for reporting to the player. */
     private static volatile List<String> problems = List.of();
+    /** Bumped on every reload so the client can report the result once it has a player to tell. */
+    private static volatile int generation;
 
     private RuleManager() {}
 
     public static void setRules(List<SoundRule> newRules) {
         rules = List.copyOf(newRules);
         index = RuleIndex.build(rules);
+        generation++;
         SoundCIT.LOGGER.info("SoundCIT: loaded {} sound rule(s)", newRules.size());
     }
 
@@ -35,6 +38,10 @@ public final class RuleManager {
 
     public static List<String> getProblems() {
         return problems;
+    }
+
+    public static int generation() {
+        return generation;
     }
 
     public static List<SoundRule> getRules() {
