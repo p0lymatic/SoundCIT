@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "package": "com.soundcit.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "minVersion": "0.8.5",
+  "client": [
+    "ClientLevelMixin",
+    "ClientPacketListenerMixin",
+    "LevelRendererMixin"
+  ],
+  "mixins": [
+    "ServerLevelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

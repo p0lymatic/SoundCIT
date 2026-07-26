@@ -1,0 +1,8 @@
+{
+  "item": "minecraft:totem_of_undying",
+  "match": "custom_name",
+  "pattern": "Lifeline",
+  "sounds": {
+    "totem_use": "soundcit:frying_pan_hit"
+  }
+}

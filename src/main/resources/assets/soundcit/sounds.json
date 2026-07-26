@@ -1,0 +1,10 @@
+{
+  "frying_pan_hit": {
+    "sounds": ["soundcit:frying_pan_hit"],
+    "subtitle": "soundcit.subtitle.frying_pan_hit"
+  },
+  "frying_pan_swing": {
+    "sounds": ["soundcit:frying_pan_swing"],
+    "subtitle": "soundcit.subtitle.frying_pan_swing"
+  }
+}

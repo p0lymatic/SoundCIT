@@ -1,0 +1,10 @@
+{
+  "item": "minecraft:trident",
+  "match": "custom_name",
+  "pattern": "Mjolnir",
+  "sounds": {
+    "minecraft:item.trident.throw": "soundcit:frying_pan_hit",
+    "minecraft:item.trident.return": "soundcit:frying_pan_swing",
+    "minecraft:item.trident.hit_ground": "soundcit:frying_pan_hit"
+  }
+}

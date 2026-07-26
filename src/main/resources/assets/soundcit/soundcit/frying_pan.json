@@ -1,0 +1,9 @@
+{
+  "item": "minecraft:mace",
+  "match": "custom_name",
+  "pattern": "Frying Pan",
+  "sounds": {
+    "hit": "soundcit:frying_pan_hit",
+    "attack": "soundcit:frying_pan_swing"
+  }
+}
