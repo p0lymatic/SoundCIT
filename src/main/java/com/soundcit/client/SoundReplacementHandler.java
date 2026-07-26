@@ -6,13 +6,20 @@ import com.soundcit.client.resolve.ResolvedItem;
 import com.soundcit.client.sound.ReplacedEntitySound;
 import com.soundcit.client.sound.ReplacedSimpleSound;
 import com.soundcit.client.sound.SoundCITReplaced;
+import com.soundcit.config.SoundRule;
 import com.soundcit.config.RuleManager;
+import com.soundcit.context.SoundContextTracker;
 import com.soundcit.context.SoundOrigin;
 import com.soundcit.context.SoundOriginStack;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.EnumSet;
 import java.util.List;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
@@ -40,6 +47,33 @@ public final class SoundReplacementHandler {
     private static final int JOURNAL_LIMIT = 32;
     private static final Deque<Replacement> JOURNAL = new ArrayDeque<>();
     private static long replacementCount;
+    /** Missing replacements already complained about, so one broken rule cannot spam the log. */
+    private static final Set<ResourceLocation> MISSING_REPORTED = new HashSet<>();
+
+    /** True if the sound manager actually has this sound, i.e. the pack shipped it. */
+    private static boolean soundExists(ResourceLocation id) {
+        return Minecraft.getInstance().getSoundManager().getSoundEvent(id) != null;
+    }
+
+    /** Called on resource reload: a previously missing sound may have been added. */
+    public static void onRulesReloaded() {
+        MISSING_REPORTED.clear();
+        LAST_PLAYED.clear();
+    }
+
+    /** Minimum ticks between two plays of the same replacement sound. */
+    private static final int REPEAT_COOLDOWN_TICKS = 3;
+    private static final Map<ResourceLocation, Integer> LAST_PLAYED = new HashMap<>();
+
+    private static boolean isRepeatingTooFast(ResourceLocation replacement) {
+        int now = SoundContextTracker.currentTick();
+        Integer last = LAST_PLAYED.get(replacement);
+        if (last != null && now - last < REPEAT_COOLDOWN_TICKS) {
+            return true;
+        }
+        LAST_PLAYED.put(replacement, now);
+        return false;
+    }
 
     private SoundReplacementHandler() {}
 
@@ -93,6 +127,33 @@ public final class SoundReplacementHandler {
                         + " (entity {}, pos {} {} {})", soundId,
                         origin != null && origin.entity() != null ? origin.entity().getType() : "none",
                         sound.getX(), sound.getY(), sound.getZ());
+            }
+            return;
+        }
+
+        // Mining or eating fires the same sound many times a second; a long custom sample stacked
+        // that often turns into noise. Vanilla samples are short enough not to care, custom ones
+        // often are not, so the same replacement is rate-limited.
+        if (isRepeatingTooFast(replacement)) {
+            return;
+        }
+
+        // "none" silences the sound outright — useful for an item that should make no noise at all.
+        if (SoundRule.SILENCE.equals(replacement)) {
+            event.setSound(null);
+            replacementCount++;
+            record(new Replacement(soundId, SoundRule.SILENCE, resolved.layer(), SoundOrigin.tickOf(origin)));
+            return;
+        }
+
+        // A replacement the pack never actually shipped would play as silence and leave only a
+        // vanilla warning in the log — the most confusing failure a pack author can hit. Keep the
+        // vanilla sound instead and say why, once per missing id.
+        if (!soundExists(replacement)) {
+            if (MISSING_REPORTED.add(replacement)) {
+                SoundCIT.LOGGER.warn("[SoundCIT] rule wants {} for {}, but no such sound is loaded —"
+                        + " keeping the vanilla one. Check sounds.json and that the .ogg file is in the pack.",
+                        replacement, soundId);
             }
             return;
         }

@@ -26,13 +26,16 @@ public class SoundRuleLoader extends SimpleJsonResourceReloadListener {
     @Override
     protected void apply(Map<ResourceLocation, JsonElement> files, ResourceManager resourceManager, ProfilerFiller profiler) {
         List<SoundRule> rules = new ArrayList<>();
+        List<String> problems = new ArrayList<>();
         for (Map.Entry<ResourceLocation, JsonElement> entry : files.entrySet()) {
             try {
                 rules.add(SoundRule.parse(entry.getKey(), entry.getValue().getAsJsonObject()));
             } catch (Exception e) {
+                problems.add(entry.getKey() + " — " + e.getMessage());
                 SoundCIT.LOGGER.error("SoundCIT: failed to parse rule {}: {}", entry.getKey(), e.getMessage());
             }
         }
+        RuleManager.setProblems(problems);
         // The incoming map iterates in hash order, so without an explicit sort two rules matching
         // the same item would win non-deterministically between runs.
         rules.sort(Comparator.comparingInt((SoundRule r) -> -r.priority)
