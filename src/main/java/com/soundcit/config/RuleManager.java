@@ -68,8 +68,13 @@ public final class RuleManager {
     @Nullable
     public static ResourceLocation findReplacement(ResourceLocation itemId, String customName,
             @Nullable TriggerType trigger, ResourceLocation originalSound) {
+        return findReplacement(itemId, customName, trigger, originalSound, null);
+    }
+
+    public static ResourceLocation findReplacement(ResourceLocation itemId, String customName,
+            @Nullable TriggerType trigger, ResourceLocation originalSound, @Nullable ItemStack stack) {
         for (SoundRule rule : rules) {
-            if (rule.appliesTo(itemId, customName)) {
+            if (rule.appliesTo(itemId, customName, stack)) {
                 ResourceLocation replacement = rule.replacementFor(trigger, originalSound);
                 if (replacement != null) {
                     return replacement;
@@ -86,7 +91,7 @@ public final class RuleManager {
         if (name == null) {
             return null;
         }
-        return findReplacement(BuiltInRegistries.ITEM.getKey(stack.getItem()), name, trigger, originalSound);
+        return findReplacement(BuiltInRegistries.ITEM.getKey(stack.getItem()), name, trigger, originalSound, stack);
     }
 
     /** The item's custom name as a plain string, or null if it has none. */

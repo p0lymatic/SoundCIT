@@ -8,6 +8,7 @@ import com.soundcit.client.sound.ReplacedSimpleSound;
 import com.soundcit.client.sound.SoundCITReplaced;
 import com.soundcit.config.SoundRule;
 import com.soundcit.config.RuleManager;
+import com.soundcit.config.SoundCITConfig;
 import com.soundcit.context.SoundContextTracker;
 import com.soundcit.context.SoundOrigin;
 import com.soundcit.context.SoundOriginStack;
@@ -62,13 +63,12 @@ public final class SoundReplacementHandler {
     }
 
     /** Minimum ticks between two plays of the same replacement sound. */
-    private static final int REPEAT_COOLDOWN_TICKS = 3;
     private static final Map<ResourceLocation, Integer> LAST_PLAYED = new HashMap<>();
 
     private static boolean isRepeatingTooFast(ResourceLocation replacement) {
         int now = SoundContextTracker.currentTick();
         Integer last = LAST_PLAYED.get(replacement);
-        if (last != null && now - last < REPEAT_COOLDOWN_TICKS) {
+        if (last != null && now - last < SoundCITConfig.get().repeatCooldownTicks) {
             return true;
         }
         LAST_PLAYED.put(replacement, now);
@@ -96,7 +96,7 @@ public final class SoundReplacementHandler {
         if (sound == null || sound instanceof SoundCITReplaced) {
             return;
         }
-        if (IGNORED_SOURCES.contains(sound.getSource())) {
+        if (IGNORED_SOURCES.contains(sound.getSource()) && !SoundCITConfig.get().replaceMusicAndRecords) {
             return;
         }
         ResourceLocation soundId = sound.getLocation();
@@ -110,7 +110,7 @@ public final class SoundReplacementHandler {
         ResourceLocation replacement = null;
         for (ResolvedItem candidate : ItemResolver.resolve(soundId, sound, origin)) {
             ResourceLocation match = RuleManager.findReplacement(
-                    candidate.itemId(), candidate.customName(), candidate.trigger(), soundId);
+                    candidate.itemId(), candidate.customName(), candidate.trigger(), soundId, candidate.stack());
             if (match != null) {
                 resolved = candidate;
                 replacement = match;

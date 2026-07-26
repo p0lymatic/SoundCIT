@@ -213,14 +213,17 @@ public final class AutoTest {
                     ItemStack trident = new ItemStack(Items.TRIDENT);
                     trident.set(DataComponents.CUSTOM_NAME, Component.literal("Mjolnir"));
                     ThrownTrident thrown = new ThrownTrident(player.serverLevel(), player, trident);
-                    thrown.moveTo(player.getX(), player.getY() + 3.0, player.getZ(), 0.0F, 90.0F);
-                    thrown.setDeltaMovement(0.0, -0.6, 0.0); // straight down into the ground
+                    // High enough that the client is told about the entity before it lands: a
+                    // projectile that hits within a few ticks of spawning cannot be identified,
+                    // because nothing about it has reached the client yet.
+                    thrown.moveTo(player.getX(), player.getY() + 12.0, player.getZ(), 0.0F, 90.0F);
+                    thrown.setDeltaMovement(0.0, -0.05, 0.0);
                     player.serverLevel().addFreshEntity(thrown);
                 },
                 null,
                 null,
                 0,
-                120,
+                200,
                 () -> SoundReplacementHandler.wasAnyReplacementOf("minecraft:item.trident.hit_ground")));
 
         // Only the server knows a totem was used: the event is server-side and the totem is gone
@@ -246,7 +249,40 @@ public final class AutoTest {
                 60,
                 () -> SoundReplacementHandler.wasAnyReplacementOf("minecraft:item.totem.use")));
 
+        // Conditions: the same name matches only when the enchantment requirement holds, so this
+        // pair proves the condition is actually consulted rather than ignored.
+        list.add(new Scenario("enchantment condition matches when satisfied",
+                player -> {
+                    ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
+                    sword.set(DataComponents.CUSTOM_NAME, Component.literal("Sharp Blade"));
+                    enchant(player, sword, 4);
+                    player.setItemInHand(InteractionHand.MAIN_HAND, sword);
+                    spawnPig(player);
+                },
+                this::attackPig,
+                60,
+                () -> !SoundReplacementHandler.journal().isEmpty()));
+
+        list.add(new Scenario("enchantment condition rejects when unsatisfied",
+                player -> {
+                    ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
+                    sword.set(DataComponents.CUSTOM_NAME, Component.literal("Sharp Blade"));
+                    player.setItemInHand(InteractionHand.MAIN_HAND, sword); // no enchantment
+                    spawnPig(player);
+                },
+                this::attackPig,
+                60,
+                () -> SoundReplacementHandler.journal().isEmpty()));
+
         return list;
+    }
+
+    /** Applies Sharpness at the given level, looked up from the server's dynamic registry. */
+    private static void enchant(ServerPlayer player, ItemStack stack, int level) {
+        var registry = player.serverLevel().registryAccess()
+                .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+        registry.get(net.minecraft.world.item.enchantment.Enchantments.SHARPNESS)
+                .ifPresent(holder -> stack.enchant(holder, level));
     }
 
     private void createWorld(Minecraft mc) {
