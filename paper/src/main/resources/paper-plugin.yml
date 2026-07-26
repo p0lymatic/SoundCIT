@@ -1,0 +1,6 @@
+name: SoundCIT
+version: '${version}'
+main: com.soundcit.paper.SoundCITPlugin
+api-version: '1.21'
+description: Tells SoundCIT clients which item caused each sound, so packs need no guessing.
+authors: [p0lymatic]
