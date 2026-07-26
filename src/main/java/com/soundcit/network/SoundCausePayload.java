@@ -7,7 +7,7 @@ import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Sent by a SoundCIT-aware server just before it plays a sound caused by a named item: "the sound
@@ -31,16 +31,16 @@ import net.minecraft.resources.ResourceLocation;
  * @param itemId     registry id of the item responsible
  * @param customName the item's custom name
  */
-public record SoundCausePayload(long key, String trigger, ResourceLocation itemId, Component customName)
+public record SoundCausePayload(long key, String trigger, Identifier itemId, Component customName)
         implements CustomPacketPayload {
 
     public static final Type<SoundCausePayload> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(SoundCIT.MODID, "sound_cause"));
+            new Type<>(Identifier.fromNamespaceAndPath(SoundCIT.MODID, "sound_cause"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SoundCausePayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_LONG, SoundCausePayload::key,
             ByteBufCodecs.STRING_UTF8, SoundCausePayload::trigger,
-            ResourceLocation.STREAM_CODEC, SoundCausePayload::itemId,
+            Identifier.STREAM_CODEC, SoundCausePayload::itemId,
             ComponentSerialization.STREAM_CODEC, SoundCausePayload::customName,
             SoundCausePayload::new);
 

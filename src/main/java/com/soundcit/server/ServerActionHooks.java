@@ -34,7 +34,7 @@ public final class ServerActionHooks {
     @SubscribeEvent
     public static void onAttack(AttackEntityEvent event) {
         Player player = event.getEntity();
-        if (player.level().isClientSide) {
+        if (player.level().isClientSide()) {
             return;
         }
         ServerCauseTracker.record(TriggerType.HIT, player.getMainHandItem(), player);
@@ -42,7 +42,7 @@ public final class ServerActionHooks {
 
     @SubscribeEvent
     public static void onUseItemTick(LivingEntityUseItemEvent.Tick event) {
-        if (event.getEntity().level().isClientSide) {
+        if (event.getEntity().level().isClientSide()) {
             return;
         }
         ServerCauseTracker.record(triggerFor(event.getItem()), event.getItem(), event.getEntity());
@@ -50,7 +50,7 @@ public final class ServerActionHooks {
 
     @SubscribeEvent
     public static void onUseItemFinish(LivingEntityUseItemEvent.Finish event) {
-        if (event.getEntity().level().isClientSide) {
+        if (event.getEntity().level().isClientSide()) {
             return;
         }
         ServerCauseTracker.record(triggerFor(event.getItem()), event.getItem(), event.getEntity());
@@ -59,7 +59,7 @@ public final class ServerActionHooks {
     @SubscribeEvent
     public static void onUseItemOnBlock(UseItemOnBlockEvent event) {
         Player player = event.getPlayer();
-        if (player == null || event.getLevel().isClientSide) {
+        if (player == null || event.getLevel().isClientSide()) {
             return;
         }
         ServerCauseTracker.record(TriggerType.USE, event.getItemStack(), player);
@@ -67,7 +67,7 @@ public final class ServerActionHooks {
 
     @SubscribeEvent
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
-        if (event.getLevel().isClientSide) {
+        if (event.getLevel().isClientSide()) {
             return;
         }
         ServerCauseTracker.record(TriggerType.USE, event.getItemStack(), event.getEntity());
@@ -75,7 +75,7 @@ public final class ServerActionHooks {
 
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
-        if (event.getLevel().isClientSide) {
+        if (event.getLevel().isClientSide()) {
             return;
         }
         ServerCauseTracker.record(TriggerType.BREAK, event.getItemStack(), event.getEntity());
@@ -104,7 +104,7 @@ public final class ServerActionHooks {
 
     @SubscribeEvent
     public static void onArrowLoose(ArrowLooseEvent event) {
-        if (event.getLevel().isClientSide) {
+        if (event.getLevel().isClientSide()) {
             return;
         }
         ServerCauseTracker.record(TriggerType.SHOOT, event.getBow(), event.getEntity());
@@ -118,7 +118,7 @@ public final class ServerActionHooks {
 
     @SubscribeEvent
     public static void onDestroyItem(PlayerDestroyItemEvent event) {
-        if (event.getEntity().level().isClientSide) {
+        if (event.getEntity().level().isClientSide()) {
             return;
         }
         ServerCauseTracker.record(TriggerType.ITEM_BREAK, event.getOriginal(), event.getEntity());

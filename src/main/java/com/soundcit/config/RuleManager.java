@@ -6,7 +6,7 @@ import java.util.List;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +18,8 @@ import org.jetbrains.annotations.Nullable;
 public final class RuleManager {
     private static volatile List<SoundRule> rules = List.of();
     private static volatile RuleIndex index = RuleIndex.EMPTY;
+    /** Rule files that failed to parse on the last reload, for reporting to the player. */
+    private static volatile List<String> problems = List.of();
 
     private RuleManager() {}
 
@@ -25,6 +27,14 @@ public final class RuleManager {
         rules = List.copyOf(newRules);
         index = RuleIndex.build(rules);
         SoundCIT.LOGGER.info("SoundCIT: loaded {} sound rule(s)", newRules.size());
+    }
+
+    public static void setProblems(List<String> newProblems) {
+        problems = List.copyOf(newProblems);
+    }
+
+    public static List<String> getProblems() {
+        return problems;
     }
 
     public static List<SoundRule> getRules() {
@@ -49,11 +59,11 @@ public final class RuleManager {
      * @return replacement sound id, or null if no rule matches
      */
     @Nullable
-    public static ResourceLocation findReplacement(ResourceLocation itemId, String customName,
-            @Nullable TriggerType trigger, ResourceLocation originalSound) {
+    public static Identifier findReplacement(Identifier itemId, String customName,
+            @Nullable TriggerType trigger, Identifier originalSound) {
         for (SoundRule rule : rules) {
             if (rule.appliesTo(itemId, customName)) {
-                ResourceLocation replacement = rule.replacementFor(trigger, originalSound);
+                Identifier replacement = rule.replacementFor(trigger, originalSound);
                 if (replacement != null) {
                     return replacement;
                 }
@@ -63,8 +73,8 @@ public final class RuleManager {
     }
 
     @Nullable
-    public static ResourceLocation findReplacement(ItemStack stack, @Nullable TriggerType trigger,
-            ResourceLocation originalSound) {
+    public static Identifier findReplacement(ItemStack stack, @Nullable TriggerType trigger,
+            Identifier originalSound) {
         String name = customNameOf(stack);
         if (name == null) {
             return null;
@@ -88,7 +98,7 @@ public final class RuleManager {
         return name != null && hasAnyRuleFor(BuiltInRegistries.ITEM.getKey(stack.getItem()), name);
     }
 
-    public static boolean hasAnyRuleFor(ResourceLocation itemId, String customName) {
+    public static boolean hasAnyRuleFor(Identifier itemId, String customName) {
         for (SoundRule rule : rules) {
             if (rule.appliesTo(itemId, customName)) {
                 return true;
@@ -97,7 +107,7 @@ public final class RuleManager {
         return false;
     }
 
-    public static ResourceLocation idOf(Item item) {
+    public static Identifier idOf(Item item) {
         return BuiltInRegistries.ITEM.getKey(item);
     }
 }

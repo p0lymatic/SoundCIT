@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.GsonHelper;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,19 +30,19 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class SoundRule {
     /** Source file, for logging. */
-    public final ResourceLocation source;
+    public final Identifier source;
     /** Item ids this rule applies to; empty = any item. */
-    public final Set<ResourceLocation> items;
+    public final Set<Identifier> items;
     public final NameMatcher nameMatcher;
     /** Semantic trigger -> replacement sound id. */
-    public final Map<TriggerType, ResourceLocation> triggerSounds;
+    public final Map<TriggerType, Identifier> triggerSounds;
     /** Vanilla sound id -> replacement sound id (keys of "sounds" containing ':'). */
-    public final Map<ResourceLocation, ResourceLocation> directOverrides;
+    public final Map<Identifier, Identifier> directOverrides;
     /** Higher wins when several rules match the same item; ties break on source path. */
     public final int priority;
 
-    private SoundRule(ResourceLocation source, Set<ResourceLocation> items, NameMatcher nameMatcher,
-            Map<TriggerType, ResourceLocation> triggerSounds, Map<ResourceLocation, ResourceLocation> directOverrides,
+    private SoundRule(Identifier source, Set<Identifier> items, NameMatcher nameMatcher,
+            Map<TriggerType, Identifier> triggerSounds, Map<Identifier, Identifier> directOverrides,
             int priority) {
         this.source = source;
         this.items = items;
@@ -53,16 +53,16 @@ public final class SoundRule {
     }
 
     /** @throws JsonSyntaxException if the file is malformed */
-    public static SoundRule parse(ResourceLocation source, JsonObject json) {
-        Set<ResourceLocation> items = new HashSet<>();
+    public static SoundRule parse(Identifier source, JsonObject json) {
+        Set<Identifier> items = new HashSet<>();
         if (json.has("item")) {
             JsonElement itemEl = json.get("item");
             if (itemEl.isJsonArray()) {
                 for (JsonElement el : itemEl.getAsJsonArray()) {
-                    items.add(ResourceLocation.parse(GsonHelper.convertToString(el, "item")));
+                    items.add(Identifier.parse(GsonHelper.convertToString(el, "item")));
                 }
             } else {
-                items.add(ResourceLocation.parse(GsonHelper.convertToString(itemEl, "item")));
+                items.add(Identifier.parse(GsonHelper.convertToString(itemEl, "item")));
             }
         }
 
@@ -73,13 +73,13 @@ public final class SoundRule {
 
         NameMatcher matcher = NameMatcher.parse(GsonHelper.getAsString(json, "pattern"));
 
-        Map<TriggerType, ResourceLocation> triggerSounds = new HashMap<>();
-        Map<ResourceLocation, ResourceLocation> directOverrides = new HashMap<>();
+        Map<TriggerType, Identifier> triggerSounds = new HashMap<>();
+        Map<Identifier, Identifier> directOverrides = new HashMap<>();
         JsonObject sounds = GsonHelper.getAsJsonObject(json, "sounds");
         for (Map.Entry<String, JsonElement> entry : sounds.entrySet()) {
-            ResourceLocation replacement = ResourceLocation.parse(GsonHelper.convertToString(entry.getValue(), entry.getKey()));
+            Identifier replacement = Identifier.parse(GsonHelper.convertToString(entry.getValue(), entry.getKey()));
             if (entry.getKey().contains(":")) {
-                directOverrides.put(ResourceLocation.parse(entry.getKey()), replacement);
+                directOverrides.put(Identifier.parse(entry.getKey()), replacement);
             } else {
                 TriggerType trigger = TriggerType.byName(entry.getKey());
                 if (trigger == null) {
@@ -97,13 +97,13 @@ public final class SoundRule {
                 GsonHelper.getAsInt(json, "priority", 0));
     }
 
-    public boolean appliesTo(ResourceLocation itemId, String customName) {
+    public boolean appliesTo(Identifier itemId, String customName) {
         return (items.isEmpty() || items.contains(itemId)) && nameMatcher.matches(customName);
     }
 
     @Nullable
-    public ResourceLocation replacementFor(@Nullable TriggerType trigger, ResourceLocation originalSound) {
-        ResourceLocation direct = directOverrides.get(originalSound);
+    public Identifier replacementFor(@Nullable TriggerType trigger, Identifier originalSound) {
+        Identifier direct = directOverrides.get(originalSound);
         if (direct != null) {
             return direct;
         }

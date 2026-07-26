@@ -7,7 +7,7 @@ import java.util.Map;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -24,7 +24,7 @@ public final class ServerCauseTracker {
     /** How close a sound must be to the acting entity to be attributed to it. */
     private static final double MAX_DISTANCE = 8.0;
 
-    public record Cause(TriggerType trigger, ResourceLocation itemId, Component customName, Vec3 pos, long tick) {}
+    public record Cause(TriggerType trigger, Identifier itemId, Component customName, Vec3 pos, long tick) {}
 
     private static final Map<Integer, Cause> BY_ENTITY = new HashMap<>();
     private static long currentTick;

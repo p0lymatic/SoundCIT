@@ -2,7 +2,7 @@ package com.soundcit.client.resolve;
 
 import com.soundcit.config.RuleManager;
 import com.soundcit.trigger.TriggerType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -30,7 +30,7 @@ public final class ItemProbe {
      * @return the named item responsible, or null if nothing there matches a rule
      */
     @Nullable
-    public static ResolvedItem probe(Entity entity, @Nullable TriggerType trigger, ResourceLocation soundId) {
+    public static ResolvedItem probe(Entity entity, @Nullable TriggerType trigger, Identifier soundId) {
         // Projectiles carry their own identity: the stack itself is not synced to the client, but
         // the item's custom name was copied onto the entity when it was created.
         ResolvedItem projectile = probeProjectile(entity);
@@ -80,7 +80,7 @@ public final class ItemProbe {
             if (arrow.getCustomName() == null) {
                 return null;
             }
-            ResourceLocation itemId = RuleManager.idOf(
+            Identifier itemId = RuleManager.idOf(
                     arrow instanceof ThrownTrident ? Items.TRIDENT : Items.ARROW);
             return new ResolvedItem(itemId, arrow.getCustomName().getString(), null, ResolvedItem.LAYER_ENTITY);
         }

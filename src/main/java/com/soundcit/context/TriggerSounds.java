@@ -6,7 +6,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Maps vanilla sound ids to the semantic {@link TriggerType} they belong to, so a sound is only
@@ -21,7 +21,7 @@ public final class TriggerSounds {
 
     /** A prefix/suffix pattern, used where enumerating every id would be unmaintainable. */
     public record SoundFamily(String prefix, String suffix) {
-        public boolean matches(ResourceLocation soundId) {
+        public boolean matches(Identifier soundId) {
             String path = soundId.getPath();
             return path.startsWith(prefix) && path.endsWith(suffix);
         }
@@ -171,7 +171,7 @@ public final class TriggerSounds {
     }
 
     /** Every trigger whose sound set contains this id — the reverse of {@link #matches}. */
-    public static List<TriggerType> triggersFor(ResourceLocation soundId) {
+    public static List<TriggerType> triggersFor(Identifier soundId) {
         List<TriggerType> found = new ArrayList<>(2);
         for (TriggerType trigger : TriggerType.values()) {
             if (matches(trigger, soundId)) {
@@ -181,7 +181,7 @@ public final class TriggerSounds {
         return found;
     }
 
-    public static boolean matches(TriggerType trigger, ResourceLocation soundId) {
+    public static boolean matches(TriggerType trigger, Identifier soundId) {
         if (soundId.getNamespace().equals("minecraft") && exactSounds(trigger).contains(soundId.getPath())) {
             return true;
         }

@@ -6,10 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.AccessibilityOnboardingScreen;
-import net.minecraft.client.gui.screens.TitleScreen;
-import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
-import net.minecraft.client.gui.screens.worldselection.WorldCreationUiState;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -17,11 +13,18 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.projectile.arrow.ThrownTrident;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.LevelSettings;
+import net.minecraft.world.level.WorldDataConfiguration;
+import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -55,7 +58,7 @@ public final class AutoTest {
     private List<Scenario> scenarios;
     private int scenarioIndex;
     private Stage stage = Stage.TITLE;
-    private int delay;
+    private int delay = 100;
     private int waited;
     private volatile int pigId = -1;
 
@@ -64,29 +67,25 @@ public final class AutoTest {
         Minecraft mc = Minecraft.getInstance();
         switch (stage) {
             case TITLE -> {
-                if (mc.screen instanceof AccessibilityOnboardingScreen) {
-                    mc.options.onboardAccessibility = false;
-                    mc.options.save();
-                    mc.setScreen(new TitleScreen());
+                // Screens were taken out of Minecraft in the 2026 releases, so there is nothing to
+                // introspect: just let the client settle, then drive world loading through
+                // WorldOpenFlows, which needs no UI at all.
+                if (--delay > 0) {
                     return;
                 }
-                if (mc.screen instanceof TitleScreen) {
-                    // Generating a superflat world costs ~40s under software rendering, so reuse
-                    // the one a previous run left behind.
-                    if (mc.getLevelSource().levelExists(LEVEL_NAME)) {
-                        SoundCIT.LOGGER.info("[SoundCIT AutoTest] reusing existing world {}", LEVEL_NAME);
-                        stage = Stage.WAIT_WORLD;
-                        mc.createWorldOpenFlows().openWorld(LEVEL_NAME, () -> mc.setScreen(new TitleScreen()));
-                        return;
-                    }
-                    SoundCIT.LOGGER.info("[SoundCIT AutoTest] opening world creation screen");
-                    CreateWorldScreen.openFresh(mc, null);
-                    stage = Stage.CREATE_WORLD;
+                if (mc.getLevelSource().levelExists(LEVEL_NAME)) {
+                    SoundCIT.LOGGER.info("[SoundCIT AutoTest] reusing existing world {}", LEVEL_NAME);
+                    stage = Stage.WAIT_WORLD;
+                    mc.createWorldOpenFlows().openWorld(LEVEL_NAME, () -> {});
+                    return;
                 }
+                SoundCIT.LOGGER.info("[SoundCIT AutoTest] creating superflat world {}", LEVEL_NAME);
+                stage = Stage.WAIT_WORLD;
+                createFlatWorld(mc);
             }
-            case CREATE_WORLD -> createWorld(mc);
+            case CREATE_WORLD -> {}
             case WAIT_WORLD -> {
-                if (mc.player != null && mc.level != null && mc.getSingleplayerServer() != null && mc.screen == null) {
+                if (mc.player != null && mc.level != null && mc.getSingleplayerServer() != null) {
                     SoundCIT.LOGGER.info("[SoundCIT AutoTest] world loaded");
                     scenarios = buildScenarios();
                     delay = 60; // let chunks settle and the attack cooldown fill
@@ -167,7 +166,7 @@ public final class AutoTest {
      * seeing candidates the scenario never created.
      */
     private static void clearLeftovers(ServerPlayer player) {
-        player.serverLevel().getEntitiesOfClass(Entity.class, player.getBoundingBox().inflate(64.0),
+        player.level().getEntitiesOfClass(Entity.class, player.getBoundingBox().inflate(64.0),
                         e -> e instanceof Pig || e instanceof ThrownTrident)
                 .forEach(Entity::discard);
     }
@@ -212,10 +211,10 @@ public final class AutoTest {
                 player -> {
                     ItemStack trident = new ItemStack(Items.TRIDENT);
                     trident.set(DataComponents.CUSTOM_NAME, Component.literal("Mjolnir"));
-                    ThrownTrident thrown = new ThrownTrident(player.serverLevel(), player, trident);
-                    thrown.moveTo(player.getX(), player.getY() + 3.0, player.getZ(), 0.0F, 90.0F);
+                    ThrownTrident thrown = new ThrownTrident(player.level(), player, trident);
+                    thrown.snapTo(player.getX(), player.getY() + 3.0, player.getZ(), 0.0F, 90.0F);
                     thrown.setDeltaMovement(0.0, -0.6, 0.0); // straight down into the ground
-                    player.serverLevel().addFreshEntity(thrown);
+                    player.level().addFreshEntity(thrown);
                 },
                 null,
                 null,
@@ -238,7 +237,8 @@ public final class AutoTest {
                     SoundCIT.LOGGER.info("[SoundCIT AutoTest]   totem: mode={} health={} offhand={}",
                             player.gameMode.getGameModeForPlayer(), player.getHealth(),
                             player.getOffhandItem().getHoverName().getString());
-                    boolean hurt = player.hurt(player.damageSources().magic(), 1000.0F);
+                    // hurt() split into hurtServer/hurtClient in the 2026 releases.
+                    boolean hurt = player.hurtServer(player.level(), player.damageSources().magic(), 1000.0F);
                     SoundCIT.LOGGER.info("[SoundCIT AutoTest]   totem: hurt={} healthAfter={}",
                             hurt, player.getHealth());
                 },
@@ -249,28 +249,28 @@ public final class AutoTest {
         return list;
     }
 
-    private void createWorld(Minecraft mc) {
-        if (!(mc.screen instanceof CreateWorldScreen screen)) {
-            return;
-        }
-        WorldCreationUiState ui = screen.getUiState();
-        ui.setName(LEVEL_NAME);
-        ui.setGameMode(WorldCreationUiState.SelectedGameMode.CREATIVE);
-        ui.setAllowCommands(true);
-        ui.getNormalPresetList().stream()
-                .filter(e -> e.preset() != null && e.preset().is(WorldPresets.FLAT))
-                .findFirst()
-                .ifPresent(ui::setWorldType);
-        try {
-            Method onCreate = CreateWorldScreen.class.getDeclaredMethod("onCreate");
-            onCreate.setAccessible(true);
-            SoundCIT.LOGGER.info("[SoundCIT AutoTest] creating superflat world");
-            stage = Stage.WAIT_WORLD;
-            onCreate.invoke(screen);
-        } catch (ReflectiveOperationException e) {
-            fail(mc, "cannot invoke CreateWorldScreen.onCreate: " + e);
-        }
+    /**
+     * Creates the superflat test world without touching a single screen. Superflat rather than
+     * normal because chunk generation under software rendering is the slowest part of a run.
+     */
+    private void createFlatWorld(Minecraft mc) {
+        LevelSettings settings = new LevelSettings(
+                LEVEL_NAME,
+                GameType.CREATIVE,
+                LevelSettings.DifficultySettings.DEFAULT,
+                true, // allow commands
+                WorldDataConfiguration.DEFAULT);
+        mc.createWorldOpenFlows().createFreshLevel(
+                LEVEL_NAME,
+                settings,
+                WorldOptions.defaultWithRandomSeed(),
+                provider -> provider.lookupOrThrow(Registries.WORLD_PRESET)
+                        .getOrThrow(WorldPresets.FLAT)
+                        .value()
+                        .createWorldDimensions(),
+                null);
     }
+
 
     private static void giveNamed(ServerPlayer player, Item item, String name) {
         ItemStack stack = new ItemStack(item);
@@ -279,15 +279,15 @@ public final class AutoTest {
     }
 
     private void spawnPig(ServerPlayer player) {
-        Pig pig = EntityType.PIG.create(player.serverLevel());
+        Pig pig = EntityTypes.PIG.create(player.level(), EntitySpawnReason.COMMAND);
         if (pig == null) {
             return;
         }
         // Slightly raised so it sits at the crosshair rather than at the player's feet — the
         // attack itself is driven through gameMode.attack, but this makes the VNC view readable.
-        pig.moveTo(player.getX() + 1.5, player.getY() + 0.5, player.getZ(), 0, 0);
+        pig.snapTo(player.getX() + 1.5, player.getY() + 0.5, player.getZ(), 0, 0);
         pig.setNoAi(true);
-        player.serverLevel().addFreshEntity(pig);
+        player.level().addFreshEntity(pig);
         pigId = pig.getId();
     }
 

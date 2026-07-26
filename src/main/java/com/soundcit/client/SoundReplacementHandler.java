@@ -14,7 +14,7 @@ import java.util.Deque;
 import java.util.EnumSet;
 import java.util.List;
 import net.minecraft.client.resources.sounds.SoundInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -35,7 +35,7 @@ public final class SoundReplacementHandler {
             EnumSet.of(SoundSource.MUSIC, SoundSource.RECORDS, SoundSource.AMBIENT, SoundSource.VOICE);
 
     /** Recent decisions, for {@code /soundcit why} and for strict assertions in the headless test. */
-    public record Replacement(ResourceLocation from, ResourceLocation to, String layer, int tick) {}
+    public record Replacement(Identifier from, Identifier to, String layer, int tick) {}
 
     private static final int JOURNAL_LIMIT = 32;
     private static final Deque<Replacement> JOURNAL = new ArrayDeque<>();
@@ -65,7 +65,7 @@ public final class SoundReplacementHandler {
         if (IGNORED_SOURCES.contains(sound.getSource())) {
             return;
         }
-        ResourceLocation soundId = sound.getLocation();
+        Identifier soundId = sound.getIdentifier();
         if (!RuleManager.index().isInteresting(soundId)) {
             return;
         }
@@ -73,9 +73,9 @@ public final class SoundReplacementHandler {
         // Candidates come back most-trustworthy first; the first one an actual rule covers wins, so
         // a confident but wrong attribution cannot shadow a correct one further down.
         ResolvedItem resolved = null;
-        ResourceLocation replacement = null;
+        Identifier replacement = null;
         for (ResolvedItem candidate : ItemResolver.resolve(soundId, sound, origin)) {
-            ResourceLocation match = RuleManager.findReplacement(
+            Identifier match = RuleManager.findReplacement(
                     candidate.itemId(), candidate.customName(), candidate.trigger(), soundId);
             if (match != null) {
                 resolved = candidate;
@@ -110,7 +110,7 @@ public final class SoundReplacementHandler {
      * Builds the replacement instance. Entity-bound sounds must stay entity-bound or the custom
      * sound stops following its source (a trident in flight, a walking mob).
      */
-    private static SoundInstance build(SoundInstance original, @Nullable SoundOrigin origin, ResourceLocation replacement) {
+    private static SoundInstance build(SoundInstance original, @Nullable SoundOrigin origin, Identifier replacement) {
         float volume = origin != null ? origin.volume() : 1.0F;
         float pitch = origin != null ? origin.pitch() : 1.0F;
         long seed = origin != null ? origin.seed() : 0L;

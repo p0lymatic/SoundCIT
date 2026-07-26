@@ -7,7 +7,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -32,7 +32,7 @@ public final class SoundContextTracker {
     private static final double MAX_DISTANCE = 6.0;
 
     /** What an action hook recorded. Only the item identity matters to rules, so no stack is kept. */
-    public record Context(ResourceLocation itemId, String customName, Vec3 pos, int expiresAtTick) {}
+    public record Context(Identifier itemId, String customName, Vec3 pos, int expiresAtTick) {}
 
     private static final Map<Integer, EnumMap<TriggerType, Context>> BY_ENTITY = new HashMap<>();
     private static int currentTick;
@@ -60,7 +60,7 @@ public final class SoundContextTracker {
         if (name == null) {
             return;
         }
-        ResourceLocation itemId = RuleManager.idOf(stack.getItem());
+        Identifier itemId = RuleManager.idOf(stack.getItem());
         if (!RuleManager.hasAnyRuleFor(itemId, name)) {
             return;
         }

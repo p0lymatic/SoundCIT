@@ -5,7 +5,8 @@ import com.soundcit.config.SoundRuleLoader;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
@@ -24,7 +25,7 @@ public class SoundCITClient {
         }
     }
 
-    private void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
-        event.registerReloadListener(new SoundRuleLoader());
+    private void onRegisterReloadListeners(AddClientReloadListenersEvent event) {
+        event.addListener(Identifier.fromNamespaceAndPath(SoundCIT.MODID, "rules"), new SoundRuleLoader());
     }
 }

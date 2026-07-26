@@ -39,7 +39,7 @@ public final class ActionHooks {
     @SubscribeEvent
     public static void onAttack(AttackEntityEvent event) {
         Player player = event.getEntity();
-        if (!player.level().isClientSide) {
+        if (!player.level().isClientSide()) {
             return;
         }
         ItemStack weapon = player.getMainHandItem();
@@ -64,7 +64,7 @@ public final class ActionHooks {
     /** Right-click use: generic use sounds, throws, fishing, buckets, spyglass, goat horn. */
     @SubscribeEvent
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
-        if (!event.getLevel().isClientSide) {
+        if (!event.getLevel().isClientSide()) {
             return;
         }
         pushAll(RIGHT_CLICK_TRIGGERS, event.getItemStack(), event.getEntity());
@@ -74,7 +74,7 @@ public final class ActionHooks {
     @SubscribeEvent
     public static void onUseItemOnBlock(UseItemOnBlockEvent event) {
         Player player = event.getPlayer();
-        if (player == null || !event.getLevel().isClientSide) {
+        if (player == null || !event.getLevel().isClientSide()) {
             return;
         }
         pushAll(USE_ON_BLOCK_TRIGGERS, event.getItemStack(), player);
@@ -83,7 +83,7 @@ public final class ActionHooks {
     /** Interacting with an entity: shears on a sheep, dye, saddle — the sound plays on the target. */
     @SubscribeEvent
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-        if (!event.getLevel().isClientSide) {
+        if (!event.getLevel().isClientSide()) {
             return;
         }
         Player player = event.getEntity();
@@ -123,7 +123,7 @@ public final class ActionHooks {
      */
     @SubscribeEvent
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
-        if (!event.getLevel().isClientSide || !(event.getEntity() instanceof Projectile projectile)) {
+        if (!event.getLevel().isClientSide() || !(event.getEntity() instanceof Projectile projectile)) {
             return;
         }
         Entity owner = projectile.getOwner();
@@ -143,7 +143,7 @@ public final class ActionHooks {
     @SubscribeEvent
     public static void onDestroyItem(PlayerDestroyItemEvent event) {
         Player player = event.getEntity();
-        if (!player.level().isClientSide) {
+        if (!player.level().isClientSide()) {
             return;
         }
         SoundContextTracker.push(TriggerType.ITEM_BREAK, event.getOriginal(), player);
@@ -152,7 +152,7 @@ public final class ActionHooks {
     /** Nocking a bow — covers the shot sound that follows on release. */
     @SubscribeEvent
     public static void onArrowNock(ArrowNockEvent event) {
-        if (!event.getLevel().isClientSide) {
+        if (!event.getLevel().isClientSide()) {
             return;
         }
         SoundContextTracker.push(TriggerType.SHOOT, event.getBow(), event.getEntity());
@@ -160,7 +160,7 @@ public final class ActionHooks {
 
     @SubscribeEvent
     public static void onArrowLoose(ArrowLooseEvent event) {
-        if (!event.getLevel().isClientSide) {
+        if (!event.getLevel().isClientSide()) {
             return;
         }
         SoundContextTracker.push(TriggerType.SHOOT, event.getBow(), event.getEntity());
@@ -177,7 +177,7 @@ public final class ActionHooks {
     @SubscribeEvent
     public static void onUseItemStop(LivingEntityUseItemEvent.Stop event) {
         LivingEntity entity = event.getEntity();
-        if (!entity.level().isClientSide) {
+        if (!entity.level().isClientSide()) {
             return;
         }
         SoundContextTracker.push(TriggerType.SHOOT, event.getItem(), entity);
@@ -187,7 +187,7 @@ public final class ActionHooks {
     /** Mining: block-hit progress sounds and the final break sound of the mined block. */
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
-        if (!event.getLevel().isClientSide) {
+        if (!event.getLevel().isClientSide()) {
             return;
         }
         Player player = event.getEntity();
@@ -196,7 +196,7 @@ public final class ActionHooks {
     }
 
     private static void pushUseContext(LivingEntity entity, ItemStack stack) {
-        if (!entity.level().isClientSide || stack.isEmpty()) {
+        if (!entity.level().isClientSide() || stack.isEmpty()) {
             return;
         }
         TriggerType trigger = switch (stack.getUseAnimation()) {

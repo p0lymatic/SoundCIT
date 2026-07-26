@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /**
  * Precomputed set of vanilla sounds any loaded rule could possibly claim.
@@ -20,10 +20,10 @@ import net.minecraft.resources.ResourceLocation;
 public final class RuleIndex {
     public static final RuleIndex EMPTY = new RuleIndex(Set.of(), List.of());
 
-    private final Set<ResourceLocation> exact;
+    private final Set<Identifier> exact;
     private final List<TriggerSounds.SoundFamily> families;
 
-    private RuleIndex(Set<ResourceLocation> exact, List<TriggerSounds.SoundFamily> families) {
+    private RuleIndex(Set<Identifier> exact, List<TriggerSounds.SoundFamily> families) {
         this.exact = exact;
         this.families = families;
     }
@@ -32,13 +32,13 @@ public final class RuleIndex {
         if (rules.isEmpty()) {
             return EMPTY;
         }
-        Set<ResourceLocation> exact = new HashSet<>();
+        Set<Identifier> exact = new HashSet<>();
         List<TriggerSounds.SoundFamily> families = new ArrayList<>();
         for (SoundRule rule : rules) {
             exact.addAll(rule.directOverrides.keySet());
             for (TriggerType trigger : rule.triggerSounds.keySet()) {
                 for (String path : TriggerSounds.exactSounds(trigger)) {
-                    exact.add(ResourceLocation.fromNamespaceAndPath("minecraft", path));
+                    exact.add(Identifier.fromNamespaceAndPath("minecraft", path));
                 }
                 for (TriggerSounds.SoundFamily family : TriggerSounds.families(trigger)) {
                     if (!families.contains(family)) {
@@ -55,7 +55,7 @@ public final class RuleIndex {
     }
 
     /** Fast pre-filter: false means no rule can possibly replace this sound. */
-    public boolean isInteresting(ResourceLocation soundId) {
+    public boolean isInteresting(Identifier soundId) {
         if (exact.contains(soundId)) {
             return true;
         }

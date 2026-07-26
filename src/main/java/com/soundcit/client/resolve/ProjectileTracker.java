@@ -3,7 +3,7 @@ package com.soundcit.client.resolve;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -31,7 +31,7 @@ public final class ProjectileTracker {
     private ProjectileTracker() {}
 
     /** Associates a just-spawned projectile with the item it was fired or thrown from. */
-    public static void remember(Entity projectile, ResourceLocation itemId, String customName) {
+    public static void remember(Entity projectile, Identifier itemId, String customName) {
         BY_ENTITY.put(projectile.getId(), new ResolvedItem(itemId, customName, null, ResolvedItem.LAYER_CONTEXT));
     }
 

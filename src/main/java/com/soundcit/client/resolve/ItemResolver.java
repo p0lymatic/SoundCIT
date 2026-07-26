@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SoundInstance;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
@@ -40,7 +40,7 @@ public final class ItemResolver {
      * The caller keeps walking the list until one candidate actually yields a replacement, which
      * lets a lower layer correct a higher one instead of being shadowed by it.</p>
      */
-    public static List<ResolvedItem> resolve(ResourceLocation soundId, SoundInstance sound, @Nullable SoundOrigin origin) {
+    public static List<ResolvedItem> resolve(Identifier soundId, SoundInstance sound, @Nullable SoundOrigin origin) {
         List<ResolvedItem> candidates = new ArrayList<>(3);
         List<TriggerType> triggers = TriggerSounds.triggersFor(soundId);
 
@@ -81,7 +81,7 @@ public final class ItemResolver {
     }
 
     @Nullable
-    private static ResolvedItem probeWithTriggers(Entity entity, List<TriggerType> triggers, ResourceLocation soundId) {
+    private static ResolvedItem probeWithTriggers(Entity entity, List<TriggerType> triggers, Identifier soundId) {
         for (TriggerType trigger : triggers) {
             ResolvedItem resolved = ItemProbe.probe(entity, trigger, soundId);
             if (resolved != null) {
@@ -92,7 +92,7 @@ public final class ItemResolver {
     }
 
     @Nullable
-    private static ResolvedItem fromContext(int entityId, List<TriggerType> triggers, ResourceLocation soundId) {
+    private static ResolvedItem fromContext(int entityId, List<TriggerType> triggers, Identifier soundId) {
         for (TriggerType trigger : triggers) {
             SoundContextTracker.Context context = SoundContextTracker.get(entityId, trigger);
             if (context != null) {
@@ -108,7 +108,7 @@ public final class ItemResolver {
      * sound is worse than missing one.
      */
     @Nullable
-    private static ResolvedItem byProximity(List<TriggerType> triggers, ResourceLocation soundId,
+    private static ResolvedItem byProximity(List<TriggerType> triggers, Identifier soundId,
             double x, double y, double z) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
@@ -143,9 +143,9 @@ public final class ItemResolver {
         return found;
     }
 
-    private static boolean sameOutcome(ResolvedItem a, ResolvedItem b, ResourceLocation soundId) {
-        ResourceLocation first = RuleManager.findReplacement(a.itemId(), a.customName(), a.trigger(), soundId);
-        ResourceLocation second = RuleManager.findReplacement(b.itemId(), b.customName(), b.trigger(), soundId);
+    private static boolean sameOutcome(ResolvedItem a, ResolvedItem b, Identifier soundId) {
+        Identifier first = RuleManager.findReplacement(a.itemId(), a.customName(), a.trigger(), soundId);
+        Identifier second = RuleManager.findReplacement(b.itemId(), b.customName(), b.trigger(), soundId);
         return first != null && first.equals(second);
     }
 }
